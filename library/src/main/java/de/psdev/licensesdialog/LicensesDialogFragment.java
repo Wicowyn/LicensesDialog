@@ -21,29 +21,48 @@ import android.content.DialogInterface;
 import android.content.res.Resources;
 import android.os.Bundle;
 import android.support.v4.app.DialogFragment;
+import android.text.TextUtils;
 import de.psdev.licensesdialog.model.Notices;
 
 public class LicensesDialogFragment extends DialogFragment {
 
     private static final String ARGUMENT_NOTICES_XML_ID = "ARGUMENT_NOTICES_XML_ID";
     private static final String ARGUMENT_INCLUDE_OWN_LICENSE = "ARGUMENT_INCLUDE_OWN_LICENSE";
+    private static final String ARGUMENT_HEADER="ARGUMENT_HEADER";
     private static final String STATE_TITLE_TEXT = "title_text";
+    private static final String STATE_HEADER_TEXT= "header text";
     private static final String STATE_LICENSES_TEXT = "licenses_text";
     private static final String STATE_CLOSE_TEXT = "close_text";
 
     //
     private String mTitleText;
+    private String mHeaderText;
     private String mCloseButtonText;
     private String mLicensesText;
 
     private DialogInterface.OnDismissListener mOnDismissListener;
 
     public static LicensesDialogFragment newInstance(final int rawNoticesResourceId, final boolean includeOwnLicense) {
-        final LicensesDialogFragment licensesDialogFragment = new LicensesDialogFragment();
         final Bundle args = new Bundle();
         args.putInt(ARGUMENT_NOTICES_XML_ID, rawNoticesResourceId);
         args.putBoolean(ARGUMENT_INCLUDE_OWN_LICENSE, includeOwnLicense);
-        licensesDialogFragment.setArguments(args);
+        
+        return LicensesDialogFragment.newInstance(args);
+    }
+    
+    public static LicensesDialogFragment newInstance(final int rawNoticesResourceId, final boolean includeOwnLicense, String headerText) {
+    	final Bundle args = new Bundle();
+        args.putInt(ARGUMENT_NOTICES_XML_ID, rawNoticesResourceId);
+        args.putBoolean(ARGUMENT_INCLUDE_OWN_LICENSE, includeOwnLicense);
+        args.putString(ARGUMENT_HEADER, headerText);
+        
+        return LicensesDialogFragment.newInstance(args);
+    }
+    
+    public static LicensesDialogFragment newInstance(Bundle args){
+    	final LicensesDialogFragment licensesDialogFragment = new LicensesDialogFragment();
+    	
+    	licensesDialogFragment.setArguments(args);
         return licensesDialogFragment;
     }
 
@@ -57,10 +76,12 @@ public class LicensesDialogFragment extends DialogFragment {
 
         if (savedInstanceState != null) {
             mTitleText = savedInstanceState.getString(STATE_TITLE_TEXT);
+            mHeaderText = savedInstanceState.getString(STATE_HEADER_TEXT);
             mLicensesText = savedInstanceState.getString(STATE_LICENSES_TEXT);
             mCloseButtonText = savedInstanceState.getString(STATE_CLOSE_TEXT);
         } else {
             mTitleText = resources.getString(R.string.notices_title);
+            mHeaderText = getArguments().getString(ARGUMENT_HEADER);
             mCloseButtonText = resources.getString(R.string.notices_close);
             try {
                 final Notices notices = NoticesXmlParser.parse(resources.openRawResource(getNoticesXmlResourceId()));
@@ -78,13 +99,16 @@ public class LicensesDialogFragment extends DialogFragment {
     public void onSaveInstanceState(final Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putString(STATE_TITLE_TEXT, mTitleText);
+        outState.putString(STATE_HEADER_TEXT, mHeaderText);
         outState.putString(STATE_LICENSES_TEXT, mLicensesText);
         outState.putString(STATE_CLOSE_TEXT, mCloseButtonText);
     }
 
     @Override
     public Dialog onCreateDialog(final Bundle savedInstanceState) {
-        return new LicensesDialog(getActivity(), mTitleText, mLicensesText, mCloseButtonText).create();
+        return TextUtils.isEmpty(mHeaderText) ? 
+        		new LicensesDialog(getActivity(), mTitleText, mLicensesText, mCloseButtonText).create()
+        		: new LicensesDialog(getActivity(), mTitleText, mLicensesText, mCloseButtonText, mHeaderText).create();
     }
 
     @Override
